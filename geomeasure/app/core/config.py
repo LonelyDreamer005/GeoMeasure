@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = f"sqlite:///{BASE_DIR}/geomeasure.db"
 
     # ── File-upload limits ──────────────────────────────────────────────────
-    MAX_UPLOAD_SIZE_BYTES: int = 50 * 1024 * 1024   # 50 MB hard limit
+    MAX_UPLOAD_SIZE_BYTES: int = 500 * 1024 * 1024  # 500 MB limit (configurable via MAX_UPLOAD_SIZE_BYTES in .env)
     ALLOWED_EXTENSIONS: set[str] = {".kml", ".zip"}
 
     # ── Processing behaviour ────────────────────────────────────────────────
