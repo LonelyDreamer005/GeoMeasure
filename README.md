@@ -2,7 +2,22 @@
 
 > **Reliable Spatial Measurements. Traceable Geospatial Data.**
 
-GeoMeasure is a production-grade geospatial file measurement and validation REST API built with **FastAPI** and **GeoPandas**. It accepts KML files and zipped Shapefiles, extracts feature geometries, handles Coordinate Reference Systems (CRS) defensively, reprojects to appropriate metric projected coordinate systems, and calculates accurate area and length measurements with complete **Measurement Provenance**.
+---
+
+### 📌 Project Layout Notice
+> **All source code, automated tests, sample datasets, web UI dashboard, and execution context reside in the [`geomeasure/`](./geomeasure) directory.**
+>
+> To run or test the project:
+> ```powershell
+> cd geomeasure
+> .\venv\Scripts\activate
+> uvicorn app.main:app --reload --port 8000
+> ```
+> Open the interactive Web Dashboard in your browser: **[http://localhost:8000/](http://localhost:8000/)** (or Swagger at `/docs`).
+
+---
+
+GeoMeasure is a production-grade geospatial file measurement and validation REST API built with **FastAPI** and **GeoPandas**. It accepts KML files and zipped Shapefiles, extracts feature geometries, handles Coordinate Reference Systems (CRS) defensively, reprojects to appropriate metric projected coordinate systems, and returns accurate area and length measurements with complete **Measurement Provenance** — a traceable audit trail explaining every CRS decision and calculation method used.
 
 Built for technical submission to **Aereo** (Drone Solutions & Geospatial Intelligence).
 
@@ -16,78 +31,213 @@ Built for technical submission to **Aereo** (Drone Solutions & Geospatial Intell
 
 ## Table of Contents
 
-1. [Problem Statement & Relevance](#problem-statement--relevance)
-2. [What is Done (Implementation Status)](#what-is-done-implementation-status)
-3. [Key Features](#key-features)
-4. [Architecture & Workflow](#architecture--workflow)
-5. [Project Structure](#project-structure)
-6. [Quick Start & Setup (Windows / VS Code)](#quick-start--setup-windows--vs-code)
-7. [API Reference & Examples](#api-reference--examples)
-8. [CRS Reprojection & Measurement Strategy](#crs-reprojection--measurement-strategy)
-9. [Measurement Status & Units](#measurement-status--units)
-10. [Defensive Security & Validation](#defensive-security--validation)
-11. [Testing & Quality Assurance](#testing--quality-assurance)
-12. [Architectural Decisions & Trade-offs](#architectural-decisions--trade-offs)
-13. [Limitations & Future Scope](#limitations--future-scope)
+1. [Detailed File Breakdown (File Details)](#detailed-file-breakdown-file-details)
+2. [Web UI & Interactive Studio](#web-ui--interactive-studio)
+3. [Automation & Batch Processing Pipeline](#automation--batch-processing-pipeline)
+4. [Problem Statement & Relevance](#problem-statement--relevance)
+5. [Key Features](#key-features)
+6. [Architecture & Workflow](#architecture--workflow)
+7. [Quick Start & Setup (Windows / VS Code)](#quick-start--setup-windows--vs-code)
+8. [API Endpoints Reference](#api-endpoints-reference)
+9. [CRS Selection & Reprojection Strategy](#crs-selection--reprojection-strategy)
+10. [Measurement Units & Status Breakdown](#measurement-units--status-breakdown)
+11. [Defensive Security & Validation](#defensive-security--validation)
+12. [Automated Testing & Results (85/85 Passed)](#automated-testing--results-8585-passed)
+13. [Important Design Decisions](#important-design-decisions)
+14. [Submission Details](#submission-details)
+
+---
+
+## Detailed File Breakdown (File Details)
+
+All project deliverables and contexts are organized cleanly inside `geomeasure/`:
+
+```
+GeoMeasure/
+├── .gitignore                          # Repository root git ignores (venv/, uploads/, etc.)
+├── README.md                           # Main GitHub repository landing page & documentation
+│
+└── geomeasure/                         # Core Application Directory
+    ├── app/                            # FastAPI Application Source Code
+    │   ├── __init__.py                 # Application package initialization
+    │   ├── main.py                     # FastAPI app factory, CORS, exception handlers, UI route & health check
+    │   │
+    │   ├── api/
+    │   │   ├── __init__.py
+    │   │   └── routes/
+    │   │       ├── __init__.py
+    │   │       └── files.py            # API routes: POST /api/files/, GET /api/files/{id}/, GET measurements, samples
+    │   │
+    │   ├── core/
+    │   │   ├── __init__.py
+    │   │   ├── config.py               # Application settings (Pydantic BaseSettings, upload limits, DB path)
+    │   │   └── exceptions.py           # Domain exceptions (EmptyFile, UnsupportedType, ZipTraversal, etc.)
+    │   │
+    │   ├── models/
+    │   │   ├── __init__.py
+    │   │   ├── database.py             # SQLAlchemy 2.0 engine, declarative base, and session generator
+    │   │   └── file_record.py          # ORM models: FileRecord (metadata) and FeatureResult (measurements)
+    │   │
+    │   ├── repositories/
+    │   │   ├── __init__.py
+    │   │   └── file_repository.py      # Database CRUD layer: persist files, query records, save feature results
+    │   │
+    │   ├── schemas/
+    │   │   ├── __init__.py
+    │   │   └── files.py                # Pydantic schemas: request models, responses, provenance schemas
+    │   │
+    │   ├── services/
+    │   │   ├── __init__.py
+    │   │   ├── file_validation.py      # Magic-byte detection, ZIP bomb prevention, directory traversal safety
+    │   │   ├── geospatial_reader.py    # Native XML KML parser & Shapefile reader via GeoPandas/Fiona
+    │   │   ├── crs_service.py          # Centroid-based automatic UTM zone selection, PyProj reprojection
+    │   │   └── measurement_service.py  # Planar area/length calculations (Shapely), unit conversion, provenance text
+    │   │
+    │   └── static/
+    │       └── index.html              # Interactive Leaflet map dashboard, drag-and-drop studio, provenance inspector
+    │
+    ├── sample_data/                    # Sample Datasets for Manual & Automated Testing
+    │   ├── generate_samples.py         # Script to generate sample KMLs and Shapefile ZIP archives
+    │   ├── sample_polygon.kml          # Bengaluru Tech Park polygon in WGS 84 (EPSG:4326)
+    │   ├── sample_linestring.kml       # Pipeline survey line in WGS 84
+    │   ├── sample_mixed.kml            # Multi-geometry dataset (Polygons, LineString, Point)
+    │   ├── sample_polygon.zip          # Complete Shapefile archive (.shp, .shx, .dbf, .prj) with polygon parcels
+    │   └── sample_linestring.zip       # Complete Shapefile archive with road network lines
+    │
+    ├── tests/                          # Automated Pytest Suite (85 Tests)
+    │   ├── __init__.py
+    │   ├── conftest.py                 # Pytest fixtures, test database setup, sample file byte generators
+    │   ├── test_upload.py              # 19 tests: Upload endpoint, format validation, size checks, status codes
+    │   ├── test_file_information.py    # 11 tests: Metadata retrieval, 404 handling, summary checks
+    │   ├── test_measurements.py        # 25 tests: Area, length, point status, tolerance-based assertions
+    │   ├── test_crs.py                 # 14 tests: UTM zone arithmetic, Northern/Southern hemispheres, reprojection
+    │   └── test_invalid_files.py       # 16 tests: Corrupted archives, path traversal attempts, missing .shp, XML errors
+    │
+    ├── results/                        # Output folder generated by automated batch pipeline
+    │   ├── batch_measurements.csv      # CSV export from automated pipeline
+    │   └── batch_measurements.json     # JSON export from automated pipeline
+    │
+    ├── automate_pipeline.py            # Automated batch audit CLI script for directories of geospatial files
+    ├── pytest.ini                      # Pytest runner configuration
+    ├── requirements.txt                # Pinned dependencies for reproducible installs
+    ├── .env.example                    # Template environment variables
+    ├── .gitignore                      # Application-level ignore rules
+    └── README.md                       # Application README inside geomeasure/
+```
+
+---
+
+## Web UI & Interactive Studio
+
+GeoMeasure comes with a built-in **Visual Studio & Interactive Map Dashboard** served directly by the backend at:
+
+👉 **[http://localhost:8000/](http://localhost:8000/)** (or `/ui`)
+
+### Dashboard Features
+- **Drag-and-Drop Ingestion:** Drag `.kml` or `.zip` files straight into the browser window for instant processing.
+- **1-Click Sample Demos:** Instantly load and inspect pre-generated datasets (Bangalore Tech Park KML, Pipeline LineString, Mixed Parcels, Shapefile ZIPs).
+- **Interactive Leaflet Map:** Displays vector geometries (Polygons in cyan, LineStrings, Points) over high-contrast satellite/dark base maps with zoom-to-bounds.
+- **Click-to-Inspect Popups:** Click any feature on the map to see its ID, Type, Measurement, and Status.
+- **Real-Time Summary Metrics:** Metric cards showing Total Features, Measured Count, Total Area ($m^2$ & hectares), Total Length ($m$ & $km$), and Target UTM CRS.
+- **Measurement Provenance Inspector:** Traceable audit box detailing source CRS, reprojected UTM zone, centroid, and planar calculation formulas.
+- **JSON Export & Clipboard Copy:** 1-click clipboard copy of raw API payloads.
+
+---
+
+## Automation & Batch Processing Pipeline
+
+GeoMeasure supports two methods of complete end-to-end automation without manual UI clicks:
+
+### 1. Automated CLI Batch Pipeline (`automate_pipeline.py`)
+Audit an entire folder of KML and Shapefile packages in a single command:
+
+```powershell
+# From geomeasure/ directory
+python automate_pipeline.py --input sample_data/ --output results/
+```
+
+**Terminal Output:**
+```
+================================================================================
+GeoMeasure Automated Pipeline: Auditing directory 'sample_data'
+API Target: http://localhost:8000
+================================================================================
+Found 5 geospatial files to audit.
+
+[1/5] Processing: sample_linestring.kml ... OK -> 1 feat, Area: 0 m2, Target CRS: EPSG:32643
+[2/5] Processing: sample_linestring.zip ... OK -> 1 feat, Area: 0 m2, Target CRS: EPSG:32643
+[3/5] Processing: sample_mixed.kml ... OK -> 3 feat, Area: 4806604.8022 m2, Target CRS: EPSG:32643
+[4/5] Processing: sample_polygon.kml ... OK -> 1 feat, Area: 4806604.8022 m2, Target CRS: EPSG:32643
+[5/5] Processing: sample_polygon.zip ... OK -> 2 feat, Area: 6008325.1953 m2, Target CRS: EPSG:32643
+
+================================================================================
+PIPELINE AUDIT SUMMARY REPORT
+================================================================================
+Filename                  | Feat  | Measured | Area (sq m)     | Length (m)   | CRS       
+------------------------------------------------------------------------------------------
+sample_linestring.kml     | 1     | 1        | -               | 5,513.3      | EPSG:32643
+sample_linestring.zip     | 1     | 1        | -               | 3,100.8      | EPSG:32643
+sample_mixed.kml          | 3     | 2        | 4,806,604.8     | 2,171.2      | EPSG:32643
+sample_polygon.kml        | 1     | 1        | 4,806,604.8     | -            | EPSG:32643
+sample_polygon.zip        | 2     | 2        | 6,008,325.2     | -            | EPSG:32643
+================================================================================
+CSV report written to: geomeasure\results\batch_measurements.csv
+JSON report written to: geomeasure\results\batch_measurements.json
+```
+
+### 2. Python Script Automation
+```python
+import requests
+
+# 1. Upload & Process
+with open("sample_data/sample_polygon.kml", "rb") as f:
+    res = requests.post("http://localhost:8000/api/files/", files={"file": f}).json()
+
+file_id = res["id"]
+
+# 2. Fetch Measurements & Provenance
+data = requests.get(f"http://localhost:8000/api/files/{file_id}/measurements/").json()
+for feat in data["features"]:
+    print(f"[{feat['geometry_type']}] Value: {feat['measurement_value']} {feat['measurement_unit']}")
+    print(f"Provenance: {feat['provenance']['method_description']}")
+```
 
 ---
 
 ## Problem Statement & Relevance
 
 ### The Geospatial Challenge
-In drone surveying, cadastral mapping, GIS QA, and mining monitoring:
-- Datasets routinely arrive in **KML** (Google Earth) or **Zipped Shapefiles** (`.shp`, `.shx`, `.dbf`, `.prj`).
-- **KML is strictly geographic WGS 84 (EPSG:4326)** — computing Euclidean area or distance in degrees produces meaningless numbers (degrees squared or degree distance).
-- **Shapefiles may lack CRS (`.prj` missing)**, be in custom local projections, or be unprojected.
-- Mixed geometry types (Polygons, LineStrings, Points) often coexist in a single layer.
+In drone surveying, land-parcel mapping, and GIS workflows:
+- Datasets routinely arrive as **KML** (Google Earth exports) or **Zipped Shapefiles** (`.shp`, `.shx`, `.dbf`, `.prj`).
+- **KML files are always in geographic WGS 84 (EPSG:4326)** — computing Euclidean area or distance in degrees produces meaningless numbers (degrees squared or degree distance).
+- **Shapefiles may lack CRS metadata (missing `.prj`)**, arrive in local planar projections, or contain mixed geometry types.
 - Invalid geometries (self-intersections, unclosed rings) can silently corrupt spatial pipelines.
 
-### Why GeoMeasure Solves This
-GeoMeasure acts as a reliable ingestion and measurement gateway:
-- Ingests files safely with magic-byte verification and ZIP bomb / path-traversal protection.
-- Automatically selects the optimal **local UTM projected CRS** for geographic datasets based on geometry centroid.
-- Returns verified measurements in **metric units (`sq_m` for areas, `m` for lengths)**.
-- Explains **every single step** in a human-readable **Measurement Provenance** block so GIS analysts and auditors know exactly how numbers were computed.
-- Preserves points and unmeasurable geometries with clear status labels (`NOT_APPLICABLE`, `UNSUPPORTED`, `FAILED`) without failing the entire file.
+### Relevance to Drone Surveying (Aereo)
 
----
-
-## What is Done (Implementation Status)
-
-The entire project has been designed, implemented, rigorously tested, and committed to GitHub:
-
-| Component | Status | Details |
-|---|---|---|
-| **FastAPI REST API** | ✅ Complete | Full application structure with routers, schemas, dependencies, and typed error handlers |
-| **POST `/api/files/`** | ✅ Complete | Multipart upload of `.kml` and zipped `.shp`, validation, ingestion, and feature processing |
-| **GET `/api/files/{id}/`** | ✅ Complete | Returns file-level metadata, processing status, and validation summary (`missing_crs`, invalid geometries) |
-| **GET `/api/files/{id}/measurements/`** | ✅ Complete | Feature-by-feature measurement results with status, values in metric units, and detailed provenance |
-| **GET `/health`** | ✅ Complete | Service health check endpoint |
-| **KML Parser** | ✅ Complete | Native XML element parser handling KML 2.2 schemas without external GDAL driver dependencies |
-| **Shapefile Reader** | ✅ Complete | Safe ZIP extraction + GeoPandas/Fiona reading with `.prj` CRS detection |
-| **CRS Service** | ✅ Complete | Centroid-based automatic UTM zone selection (Zones 1–60, N/S hemispheres), projected pass-through, and global span fallback |
-| **Measurement Service** | ✅ Complete | Shapely 2.0 planar calculations, square meters, hectares conversion in provenance, length in meters |
-| **Defensive Security** | ✅ Complete | Magic-byte checking, ZIP path traversal (`../`) checks, uncompressed ratio checks, 50MB file size limit |
-| **SQLite Persistence** | ✅ Complete | SQLAlchemy 2.0 models (`FileRecord`, `FeatureResult`) with SQLite database |
-| **Automated Test Suite** | ✅ Complete | **85 / 85 tests passing** covering unit tests, integration tests, error branches, and numerical tolerances |
-| **Sample Data Generator** | ✅ Complete | `sample_data/generate_samples.py` generates valid KML polygons, lines, points, and Shapefile ZIPs |
+| Use Case | How GeoMeasure Helps |
+|---|---|
+| **Land-parcel surveys** | Calculates parcel area in sq metres and hectares with high metric precision |
+| **Infrastructure / Pipeline mapping** | Measures transmission lines and road lengths in metres |
+| **Mining & volumetric boundaries** | Ingests projected CRS data and verifies linear units without manual conversion |
+| **Flight mission planning** | Reads KML boundary exports directly from drone ground control software |
+| **GIS QA pipelines** | Automated validation of CRS definitions, geometry validity, and attribute integrity |
 
 ---
 
 ## Key Features
 
-- **Format Flexibility:** Upload raw `.kml` or `.zip` Shapefile packages.
-- **Accurate Metric Calculations:**
-  - `Polygon` / `MultiPolygon` → Area in square metres (`sq_m`) + hectares in provenance.
-  - `LineString` / `MultiLineString` → Length in metres (`m`).
-  - `Point` / `MultiPoint` → `NOT_APPLICABLE` (no erroneous 0 measurements).
-- **Measurement Provenance (Audit Trail):** Every feature includes:
-  - `source_crs`: The CRS specified in the file.
-  - `measurement_crs`: The projected CRS used for calculation.
-  - `method_description`: Transparent explanation of reprojection, centroid, raw values, and conversions.
-  - `status`: One of `MEASURED`, `NOT_APPLICABLE`, `UNSUPPORTED`, or `FAILED`.
-- **Defensive Ingestion:** Reject corrupted files, missing `.shp` components, zip bombs, or file spoofing with structured error codes.
-- **Interactive Documentation:** Automatic OpenAPI / Swagger UI at `/docs` and ReDoc at `/redoc`.
+- ✅ Upload **KML** files and **zipped Shapefiles** (`.zip`).
+- ✅ **Polygon / MultiPolygon** → area in square metres (`sq_m`) + hectare conversion.
+- ✅ **LineString / MultiLineString** → length in metres (`m`).
+- ✅ **Point / MultiPoint** → preserved with `NOT_APPLICABLE` status (never falsely 0).
+- ✅ **Automatic CRS Reprojection** — geographic datasets are reprojected to the appropriate metric UTM zone before measurement.
+- ✅ **Measurement Provenance** — every feature records source CRS, measurement CRS, and a plain-English calculation explanation.
+- ✅ **File-level Validation Summary** — missing CRS, invalid geometries, unsupported types.
+- ✅ **Safe ZIP Handling** — path-traversal protection, size limits, magic-byte validation.
+- ✅ **Persistent Results** — SQLite storage via SQLAlchemy 2.0 ORM.
+- ✅ **85 Automated Tests** with tolerance-based numerical assertions.
+- ✅ **Swagger UI & ReDoc** auto-generated documentation.
 
 ---
 
@@ -95,24 +245,25 @@ The entire project has been designed, implemented, rigorously tested, and commit
 
 ```mermaid
 graph TB
-    Client(["Client (cURL / Swagger UI / Web)"])
+    Client(["Client (Browser UI / cURL / Python / CLI Pipeline)"])
 
     subgraph API["FastAPI Application"]
-        Router["Files Router<br/>POST /api/files/<br/>GET /api/files/{id}/<br/>GET /api/files/{id}/measurements/"]
+        UI["Web UI Dashboard<br/>GET / & GET /ui"]
+        Router["Files Router<br/>POST /api/files/<br/>GET /api/files/{id}/<br/>GET /api/files/{id}/measurements/<br/>GET /api/files/samples/<br/>POST /api/files/load-sample/{name}"]
     end
 
-    subgraph CoreServices["Service Layer"]
-        Validator["File Validator<br/>- Magic Bytes<br/>- Size & Extension<br/>- ZIP Path Traversal Protection"]
-        Reader["Geospatial Reader<br/>- KML XML Parser (Point, Line, Poly)<br/>- GeoPandas / Fiona Shapefile Reader"]
-        CRS["CRS Engine<br/>- EPSG / WKT Resolution<br/>- Centroid UTM Auto-selection<br/>- Reprojection (PyProj)"]
-        Measure["Measurement Engine<br/>- Shapely Planar Calculations<br/>- sq_m & m Conversion<br/>- Provenance Generation"]
+    subgraph Services["Service Layer"]
+        Validator["File Validation<br/>(magic bytes, size, ZIP traversal)"]
+        Reader["Geospatial Reader<br/>(Native KML XML parser, GeoPandas SHP)"]
+        CRS["CRS Engine<br/>(Centroid UTM selection, PyProj reprojection)"]
+        Measure["Measurement Engine<br/>(Shapely planar calculations + provenance)"]
     end
 
-    subgraph Storage["Storage & Persistence"]
+    subgraph Persistence["Storage Layer"]
         DB[("SQLite Database<br/>FileRecord & FeatureResult")]
-        Uploads[("Temporary Uploads Dir")]
     end
 
+    Client --> UI
     Client --> Router
     Router --> Validator
     Validator --> Reader
@@ -120,113 +271,47 @@ graph TB
     CRS --> Measure
     Measure --> DB
     DB --> Router
-    Router --> Client
-```
-
----
-
-## Project Structure
-
-```
-GeoMeasure/
-├── README.md                      # Root documentation for GitHub
-├── .gitignore                     # Repository-level ignore rules
-└── geomeasure/                    # Main application package
-    ├── app/
-    │   ├── main.py                # FastAPI initialization, CORS, error handlers
-    │   ├── api/
-    │   │   └── routes/
-    │   │       └── files.py       # API endpoints (/api/files/*)
-    │   ├── core/
-    │   │   ├── config.py          # Pydantic BaseSettings configuration
-    │   │   └── exceptions.py      # Structured domain exceptions & HTTP mappings
-    │   ├── models/
-    │   │   ├── database.py        # SQLAlchemy engine & session maker
-    │   │   └── file_record.py     # FileRecord & FeatureResult DB models
-    │   ├── repositories/
-    │   │   └── file_repository.py # Database query abstractions
-    │   ├── schemas/
-    │   │   └── files.py           # Pydantic schemas (Request / Response validation)
-    │   └── services/
-    │       ├── file_validation.py # File safety & format inspection
-    │       ├── geospatial_reader.py # KML & Shapefile parsers
-    │       ├── crs_service.py     # Automatic UTM selection & PyProj handling
-    │       └── measurement_service.py # Planar measurements & provenance logic
-    ├── sample_data/
-    │   └── generate_samples.py    # Generates test KML & Shapefile ZIP files
-    ├── tests/
-    │   ├── conftest.py            # Pytest fixtures & in-memory SQLite DB
-    │   ├── test_upload.py         # Upload endpoint tests (19 tests)
-    │   ├── test_file_information.py # File metadata retrieval tests (11 tests)
-    │   ├── test_measurements.py   # Area, length, point tests (25 tests)
-    │   ├── test_crs.py            # CRS selection & reprojection tests (14 tests)
-    │   └── test_invalid_files.py  # Error handling & safety tests (16 tests)
-    ├── .env.example               # Configurable environment variable template
-    ├── .gitignore                 # Application gitignore
-    ├── pytest.ini                 # Pytest test discovery settings
-    ├── requirements.txt           # Pinned production & test dependencies
-    └── README.md                  # Application-level README
 ```
 
 ---
 
 ## Quick Start & Setup (Windows / VS Code)
 
-### 1. Clone the Repository
+### 1. Clone the repository
 ```powershell
 git clone https://github.com/LonelyDreamer005/GeoMeasure.git
 cd GeoMeasure\geomeasure
 ```
 
-### 2. Create and Activate Virtual Environment
+### 2. Create and activate virtual environment
 ```powershell
 python -m venv venv
 .\venv\Scripts\activate
 ```
 
-### 3. Install Dependencies
+### 3. Install dependencies
 ```powershell
 pip install -r requirements.txt
 ```
 
-### 4. Run the API Server
+### 4. Start the API server
 ```powershell
 uvicorn app.main:app --reload --port 8000
 ```
-Server will be available at: **http://localhost:8000**
+
+### 5. Access the Interfaces
+- **Interactive Web Studio:** [http://localhost:8000/](http://localhost:8000/)
 - **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
 - **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
 
-### 5. Generate Sample Data
-Run the generator to create sample KML and Shapefile packages in `sample_data/`:
-```powershell
-python sample_data/generate_samples.py
-```
-
 ---
 
-## API Reference & Examples
+## API Endpoints Reference
 
-### 1. Upload a Geospatial File
-- **Endpoint:** `POST /api/files/`
-- **Content-Type:** `multipart/form-data`
-
-```powershell
-# PowerShell
-$response = Invoke-RestMethod -Uri "http://localhost:8000/api/files/" `
-  -Method POST `
-  -Form @{ file = Get-Item ".\sample_data\sample_polygon.kml" }
-$response | ConvertTo-Json -Depth 5
-```
-
-```bash
-# cURL
-curl -X POST "http://localhost:8000/api/files/" \
-  -F "file=@sample_data/sample_polygon.kml"
-```
-
-**Response (`201 Created`):**
+### 1. `POST /api/files/` — Upload and Process
+- **Content-Type:** `multipart/form-data` with field `file`
+- **Response (`201 Created`):**
 ```json
 {
   "id": "e4a1a37c-f129-4720-bc2f-e05e552a8cb9",
@@ -248,49 +333,11 @@ curl -X POST "http://localhost:8000/api/files/" \
 }
 ```
 
----
+### 2. `GET /api/files/{id}/` — File Information
+- **Response (`200 OK`):** Returns file metadata, processing status, and validation summary.
 
-### 2. Retrieve File Information
-- **Endpoint:** `GET /api/files/{id}/`
-
-```powershell
-Invoke-RestMethod "http://localhost:8000/api/files/e4a1a37c-f129-4720-bc2f-e05e552a8cb9/"
-```
-
-**Response (`200 OK`):**
-```json
-{
-  "id": "e4a1a37c-f129-4720-bc2f-e05e552a8cb9",
-  "filename": "sample_polygon.kml",
-  "file_type": "kml",
-  "feature_count": 1,
-  "crs": "EPSG:4326",
-  "status": "COMPLETED",
-  "file_size_bytes": 1152,
-  "created_at": "2026-10-11T05:00:00Z",
-  "processed_at": "2026-10-11T05:00:01Z",
-  "validation_summary": {
-    "has_issues": false,
-    "issues": [],
-    "missing_crs": false,
-    "invalid_geometry_count": 0,
-    "unsupported_geometry_count": 0,
-    "failed_measurement_count": 0
-  },
-  "error_detail": null
-}
-```
-
----
-
-### 3. Retrieve Feature Measurements
-- **Endpoint:** `GET /api/files/{id}/measurements/`
-
-```powershell
-Invoke-RestMethod "http://localhost:8000/api/files/e4a1a37c-f129-4720-bc2f-e05e552a8cb9/measurements/"
-```
-
-**Response (`200 OK`):**
+### 3. `GET /api/files/{id}/measurements/` — Feature Measurements & Provenance
+- **Response (`200 OK`):**
 ```json
 {
   "file_id": "e4a1a37c-f129-4720-bc2f-e05e552a8cb9",
@@ -310,8 +357,7 @@ Invoke-RestMethod "http://localhost:8000/api/files/e4a1a37c-f129-4720-bc2f-e05e5
       "feature_id": "parcel_bengaluru_001",
       "geometry_type": "Polygon",
       "properties": {
-        "name": "Bengaluru Tech Park Parcel",
-        "description": "Survey boundary parcel"
+        "name": "Bengaluru Tech Park Parcel"
       },
       "geometry": {
         "type": "Polygon",
@@ -336,87 +382,75 @@ Invoke-RestMethod "http://localhost:8000/api/files/e4a1a37c-f129-4720-bc2f-e05e5
 
 ---
 
-## CRS Reprojection & Measurement Strategy
+## CRS Selection & Reprojection Strategy
 
-Calculating planar geometric formulas (such as polygon area or line length) directly on geographic coordinates (latitude and longitude in degrees) is mathematically invalid and yields meaningless values. GeoMeasure implements a rigorous three-tier projection strategy:
-
-1. **Already Projected (Tier 1):**
-   If the source CRS is already a projected coordinate reference system (e.g., UTM, State Plane, National Grid in metres/feet), GeoMeasure measures directly in that CRS and converts the unit to metres if necessary.
-2. **Geographic Coordinates (Tier 2 - Auto UTM):**
-   When the source CRS is geographic (such as standard KML `EPSG:4326`), GeoMeasure computes the centroid of each geometry and determines the corresponding UTM zone:
+1. **Tier 1 (Already Projected):**
+   If the source file is in a projected CRS (e.g. UTM or State Plane), measurements are calculated directly without reprojection.
+2. **Tier 2 (Geographic WGS 84 / EPSG:4326):**
+   Calculates the geometry centroid and determines the corresponding UTM zone:
    $$\text{zone} = \left\lfloor\frac{\text{longitude} + 180}{6}\right\rfloor + 1$$
-   - Northern Hemisphere ($\text{lat} \ge 0$): `EPSG:32600 + zone` (e.g., Bengaluru at $77.6^\circ\text{E}, 12.9^\circ\text{N} \to$ UTM Zone 43N, `EPSG:32643`)
-   - Southern Hemisphere ($\text{lat} < 0$): `EPSG:32700 + zone`
-   Reprojection distortion within a 6-degree UTM zone is minimal ($< 0.1\%$).
-3. **Wide Extent Fallback (Tier 3):**
-   If a feature spans across more than $20^\circ$ of longitude, UTM is inappropriate. GeoMeasure falls back to Web Mercator (`EPSG:3857`) and records an explicit caveat in the provenance note.
-4. **Missing CRS Handling:**
-   If a Shapefile lacks a `.prj` component, GeoMeasure will **not** silently guess the CRS. It marks the measurement status as `FAILED`, preserves the geometry and properties intact, and flags `missing_crs: true` in the validation summary.
+   - Northern hemisphere: `EPSG:32600 + zone`
+   - Southern hemisphere: `EPSG:32700 + zone`
+   Distortion within a 6° UTM zone is minimal ($< 0.1\%$).
+3. **Tier 3 (Geometries Spanning $> 20^\circ$ Longitude):**
+   Falls back to Web Mercator (`EPSG:3857`) and notes the non-equal-area caveat in the provenance.
+4. **Missing CRS:**
+   Marks measurement status as `FAILED` with `missing_crs: true` without crashing.
 
 ---
 
-## Measurement Status & Units
+## Measurement Units & Status Breakdown
 
 | Geometry Type | Measurement | Output Unit | Status | Notes |
 |---|---|---|---|---|
-| `Polygon` / `MultiPolygon` | Area | `sq_m` | `MEASURED` | Also includes hectare conversion in provenance |
-| `LineString` / `MultiLineString` | Length | `m` | `MEASURED` | Planar length along reprojected vertices |
+| `Polygon` / `MultiPolygon` | Area | `sq_m` | `MEASURED` | Includes hectare conversion in provenance |
+| `LineString` / `MultiLineString` | Length | `m` | `MEASURED` | Metric distance along vertices |
 | `Point` / `MultiPoint` | N/A | `null` | `NOT_APPLICABLE` | A point has no area or length; never zeroed |
 | `GeometryCollection` | N/A | `null` | `UNSUPPORTED` | Heterogeneous collections are flagged |
-| Any with Missing/Invalid CRS | N/A | `null` | `FAILED` | Traceable reason documented in provenance |
-
-> **Important:** GeoMeasure strictly adheres to the principle that `null` $\ne$ `0.0`. A point or failed measurement has a value of `null`, preventing dangerous misinterpretations in automated analysis pipelines.
+| Missing/Invalid CRS | N/A | `null` | `FAILED` | Reason documented in provenance |
 
 ---
 
 ## Defensive Security & Validation
 
-- **Magic-Byte Inspection:** Validates actual binary file headers (`PK\x03\x04` for ZIP, XML declaration for KML) instead of relying solely on the file extension.
-- **ZIP Path Traversal Defense:** Scans every archive entry for directory traversal sequences (`..`, absolute paths) before decompression to prevent arbitrary file overwrites.
-- **Decompression Bomb Protection:** Inspects uncompressed file sizes and enforces a safe compression ratio limit.
-- **Required Shapefile Components:** Verifies that `.shp`, `.shx`, and `.dbf` are present in uploaded Shapefile archives.
+- **Magic-Byte Inspection:** Verifies binary file headers (`PK\x03\x04` for ZIP, XML declaration for KML).
+- **ZIP Path Traversal Defense:** Scans every archive entry for traversal sequences (`..`, absolute paths) before extraction.
+- **Decompression Bomb Protection:** Enforces safe uncompressed size limits and compression ratios.
+- **Required Shapefile Components:** Verifies that `.shp`, `.shx`, and `.dbf` are present.
 - **File Size Ceiling:** Rejects files exceeding 50 MB with HTTP `400 Bad Request`.
-- **Safe Error Handling:** Catch-all exception handling ensures no internal stack traces, system paths, or raw DB errors leak to the client.
+- **Safe Error Responses:** No Python stack traces or internal paths are returned.
 
 ---
 
-## Testing & Quality Assurance
-
-GeoMeasure includes an automated test suite executed via `pytest`.
+## Automated Testing & Results (85/85 Passed)
 
 ```powershell
 cd geomeasure
 python -m pytest tests/ -v
 ```
 
-### Test Coverage Summary: **85 Passed / 0 Failed**
-- `test_upload.py` (19 tests): KML and Shapefile uploads, file size limits, magic byte validation, invalid extensions.
-- `test_file_information.py` (11 tests): Retrieval of file metadata, 404 responses, timestamp verification, validation summaries.
-- `test_measurements.py` (25 tests): Area calculations, length calculations, point non-applicability, provenance string inspection, tolerance-based assertions.
-- `test_crs.py` (14 tests): UTM zone calculations, Southern/Northern hemisphere branches, projected vs geographic handling.
-- `test_invalid_files.py` (16 tests): Corrupted archives, path traversal attempts, missing `.shp` components, malformed XML.
+```
+======================= 85 passed in 1.50s =======================
+```
+
+| Test File | Tests | Coverage |
+|---|---|---|
+| `test_upload.py` | 19 | Upload endpoint, file type detection, rejections |
+| `test_file_information.py` | 11 | File info retrieval, 404 handling |
+| `test_measurements.py` | 25 | Area, length, point, provenance, shapefiles |
+| `test_crs.py` | 14 | CRS selection, UTM zones, reprojection |
+| `test_invalid_files.py` | 16 | Invalid files, path traversal, edge cases |
 
 ---
 
-## Architectural Decisions & Trade-offs
+## Important Design Decisions
 
-1. **Native XML KML Parsing:**
-   Standard pre-compiled GDAL wheels on Windows often omit the KML/LIBKML driver. By leveraging Python's `xml.etree.ElementTree` with standard KML 2.2 schema mapping, GeoMeasure runs reliably on any Windows installation without external GDAL binary configuration.
-2. **Synchronous Ingestion Pipeline:**
-   For typical drone survey files ($\le 50\text{ MB}$), synchronous processing ensures immediate responses and simple architectural review without managing message queues (Celery/RabbitMQ).
-3. **SQLite with SQLAlchemy 2.0:**
-   Provides zero-configuration local execution out of the box while allowing instant transition to PostgreSQL / PostGIS in production by updating `DATABASE_URL`.
-4. **Tolerance-Based Testing:**
-   Spatial projections inherently involve slight ellipsoidal distortions; tests utilize percentage-based numerical tolerances ($\pm 5\%$ for area, $\pm 1\%$ for line lengths) ensuring robust validation.
-
----
-
-## Limitations & Future Scope
-
-- **KML MultiGeometry:** Currently marked `UNSUPPORTED`. Future versions can decompose heterogeneous MultiGeometries and measure constituent sub-parts.
-- **Async Task Queue:** For enterprise scaling with massive rasters or multi-gigabyte point clouds, offload parsing to background workers (Celery / ARQ).
-- **Format Expansions:** Add native ingestion for GeoJSON, GeoPackage (`.gpkg`), and FlatGeoBuf (`.fgb`).
-- **Additional Conversions:** Expose parameter-driven unit preferences (`acres`, `sq_km`, `miles`).
+1. **Why XML parsing for KML instead of GDAL?**
+   The pre-built GeoPandas wheels for Windows (without a full GDAL build) do not include the KML/LIBKML driver. GeoMeasure parses KML directly using Python's standard-library `xml.etree.ElementTree`, guaranteeing zero external binary installation issues on Windows.
+2. **Why UTM for reprojection?**
+   UTM provides metric coordinates with $< 0.1\%$ distortion for areas within a 6° zone and is familiar to GIS practitioners.
+3. **Why Synchronous Processing?**
+   For files up to 50 MB, synchronous processing keeps the code simple and easy to trace during technical review without requiring message queues.
 
 ---
 
@@ -424,4 +458,4 @@ python -m pytest tests/ -v
 
 - **Author:** Vinay (B.Tech Computer Science)
 - **Repository:** [https://github.com/LonelyDreamer005/GeoMeasure](https://github.com/LonelyDreamer005/GeoMeasure)
-- **Framework:** Python 3.12 / FastAPI / GeoPandas / Shapely / PyProj
+- **Target Company:** Aereo (Geospatial File Measurement API Assignment)

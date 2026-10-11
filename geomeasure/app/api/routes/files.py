@@ -64,6 +64,8 @@ from app.schemas.files import (
     ValidationIssue,
     ValidationSummary,
 )
+from pathlib import Path
+from app.core.config import settings
 from app.services.file_validation import validate_upload, validate_zip_shapefile
 from app.services.geospatial_reader import read_kml, read_shapefile_from_zip
 from app.services.measurement_service import measure_all_features
@@ -71,45 +73,9 @@ from app.services.measurement_service import measure_all_features
 router = APIRouter(prefix="/api/files", tags=["Files"])
 
 
-# ── Endpoint 1: Upload and Process ────────────────────────────────────────────
-
-@router.post(
-    "/",
-    response_model=FileUploadResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Upload and process a geospatial file",
-    description=(
-        "Accept a `.kml` file or a `.zip` archive containing a Shapefile. "
-        "The file is validated, features are extracted, measurements are calculated "
-        "with appropriate CRS transformation, and results are persisted. "
-        "Returns a unique file ID and processing summary."
-    ),
-    responses={
-        400: {"description": "Invalid file (wrong type, empty, oversized, corrupt)"},
-        422: {"description": "Validation error in request form"},
-        500: {"description": "Internal processing error"},
-    },
-)
-async def upload_file(
-    file: UploadFile = File(..., description="A .kml file or .zip containing a Shapefile."),
-    db: Session = Depends(get_db),
-):
-    """
-    Upload and process a geospatial file.
-
-    Steps:
-    1. Read the raw bytes and validate (extension, magic bytes, size).
-    2. Create a PROCESSING database record.
-    3. Parse the file (KML or Shapefile).
-    4. Measure all features.
-    5. Save feature results and update the file record.
-    6. Return the processing summary.
-    """
-    # Step 1 — Read upload bytes.
-    content = await file.read()
-    original_filename = file.filename or "unknown"
-
-    # Step 2 — Validate before doing any geospatial work.
+def _process_file_content(content: bytes, original_filename: str, db: Session) -> FileUploadResponse:
+    """Validate, parse, measure, and persist geospatial file content."""
+    # Step 1 — Validate before doing any geospatial work.
     try:
         detected_type = validate_upload(original_filename, content)
     except (EmptyFileError, FileSizeLimitExceededError, UnsupportedFileTypeError) as exc:
@@ -130,7 +96,7 @@ async def upload_file(
                 detail={"code": type(exc).__name__, "message": str(exc)},
             )
 
-    # Step 3 — Create the database record.
+    # Step 2 — Create the database record.
     record = create_file_record(
         db,
         filename=original_filename,
@@ -138,7 +104,7 @@ async def upload_file(
         file_size_bytes=len(content),
     )
 
-    # Step 4 — Parse the geospatial file.
+    # Step 3 — Parse the geospatial file.
     try:
         if file_type == "kml":
             dataset = read_kml(content)
@@ -166,10 +132,10 @@ async def upload_file(
     source_crs = dataset.get("source_crs")
     raw_features = dataset.get("features", [])
 
-    # Step 5 — Measure all features.
+    # Step 4 — Measure all features.
     measurement_results = measure_all_features(raw_features, source_crs)
 
-    # Step 6 — Build validation summary and persist.
+    # Step 5 — Build validation summary and persist.
     validation_summary_dict = build_validation_summary(measurement_results, source_crs)
 
     update_file_record_success(
@@ -181,7 +147,7 @@ async def upload_file(
 
     save_feature_results(db, record.id, measurement_results)
 
-    # Step 7 — Build and return the response.
+    # Step 6 — Return response.
     val_summary = _dict_to_validation_summary(validation_summary_dict)
 
     return FileUploadResponse(
@@ -195,6 +161,68 @@ async def upload_file(
         created_at=record.created_at,
         validation_summary=val_summary,
     )
+
+
+# ── Endpoint 1: Upload and Process ────────────────────────────────────────────
+
+@router.post(
+    "/",
+    response_model=FileUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload and process a geospatial file",
+    description=(
+        "Accept a `.kml` file or a `.zip` archive containing a Shapefile. "
+        "The file is validated, features are extracted, measurements are calculated "
+        "with appropriate CRS transformation, and results are persisted. "
+        "Returns a unique file ID and processing summary."
+    ),
+    responses={
+        400: {"description": "Invalid file (wrong type, empty, oversized, corrupt)"},
+        422: {"description": "Validation error in request form"},
+        500: {"description": "Internal processing error"},
+    },
+)
+async def upload_file(
+    file: UploadFile = File(..., description="A .kml file or .zip containing a Shapefile."),
+    db: Session = Depends(get_db),
+):
+    """Upload and process a geospatial file."""
+    content = await file.read()
+    original_filename = file.filename or "unknown"
+    return _process_file_content(content, original_filename, db)
+
+
+@router.get("/samples/", summary="List available pre-generated sample files", tags=["Samples"])
+def list_samples():
+    """List sample files in the sample_data directory for 1-click UI demos."""
+    samples_dir = settings.BASE_DIR / "sample_data"
+    if not samples_dir.exists():
+        return []
+    return [
+        {"filename": p.name, "size_bytes": p.stat().st_size}
+        for p in sorted(samples_dir.iterdir())
+        if p.suffix.lower() in {".kml", ".zip"}
+    ]
+
+
+@router.post(
+    "/load-sample/{sample_name}",
+    response_model=FileUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Load and process a pre-generated sample file",
+    tags=["Samples"],
+)
+def load_sample_file(sample_name: str, db: Session = Depends(get_db)):
+    """Load and process a pre-generated sample file from sample_data/ with 1 click."""
+    clean_name = Path(sample_name).name
+    sample_path = settings.BASE_DIR / "sample_data" / clean_name
+    if not sample_path.exists() or not sample_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "SAMPLE_NOT_FOUND", "message": f"Sample file '{sample_name}' not found."},
+        )
+    content = sample_path.read_bytes()
+    return _process_file_content(content, clean_name, db)
 
 
 # ── Endpoint 2: Get File Information ─────────────────────────────────────────

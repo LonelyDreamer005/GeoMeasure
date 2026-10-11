@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from app.api.routes import files as files_router
 from app.core.config import settings
@@ -133,11 +133,29 @@ def health_check():
     }
 
 
-@app.get("/", tags=["Health"], include_in_schema=False)
-def root():
-    return {
-        "message": f"Welcome to {settings.APP_NAME} v{settings.APP_VERSION}",
-        "docs": "/docs",
-        "redoc": "/redoc",
-        "health": "/health",
-    }
+@app.get("/", tags=["UI"], include_in_schema=False, response_class=HTMLResponse)
+@app.get("/ui", tags=["UI"], include_in_schema=False, response_class=HTMLResponse)
+def root(request: Request):
+    """
+    Serve the GeoMeasure Visual Dashboard at / and /ui.
+    If the client explicitly requests JSON (e.g. cURL or scripts), return API metadata.
+    """
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept and "text/html" not in accept:
+        return JSONResponse(
+            content={
+                "message": f"Welcome to {settings.APP_NAME} v{settings.APP_VERSION}",
+                "ui": "/",
+                "docs": "/docs",
+                "redoc": "/redoc",
+                "health": "/health",
+            }
+        )
+
+    index_path = settings.BASE_DIR / "app" / "static" / "index.html"
+    if index_path.exists():
+        return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
+
+    return HTMLResponse(
+        content=f"<h1>Welcome to {settings.APP_NAME}</h1><p>Visit <a href='/docs'>/docs</a></p>"
+    )

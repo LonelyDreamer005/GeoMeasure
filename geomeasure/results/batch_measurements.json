@@ -1,0 +1,412 @@
+[
+  {
+    "file_id": "31059a41-aab9-418a-9e10-02f1317ab451",
+    "filename": "sample_linestring.kml",
+    "status": "COMPLETED",
+    "source_crs": "EPSG:4326",
+    "summary": {
+      "total_features": 1,
+      "measured": 1,
+      "not_applicable": 0,
+      "unsupported": 0,
+      "failed": 0
+    },
+    "features": [
+      {
+        "feature_index": 0,
+        "feature_id": "transect1",
+        "geometry_type": "LineString",
+        "properties": {
+          "name": "Transect 1",
+          "description": "North-south drone flight path",
+          "transect_id": "T001",
+          "altitude_m": "120"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              77.58,
+              12.97
+            ],
+            [
+              77.58,
+              12.99
+            ],
+            [
+              77.59,
+              12.99
+            ],
+            [
+              77.59,
+              12.97
+            ]
+          ]
+        },
+        "measurement_type": "length",
+        "measurement_value": 5513.2607,
+        "measurement_unit": "m",
+        "measurement_status": "MEASURED",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "length",
+          "measurement_unit": "m",
+          "method_description": "Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.5850\u00b0, 12.9820\u00b0). Measurements are in metres (sq metres for area). Raw length: 5513.260672 metres. Converted to metres: 5513.2607 m.",
+          "status": "MEASURED"
+        }
+      }
+    ]
+  },
+  {
+    "file_id": "056da8c6-848e-4b3a-beae-6810b9aae542",
+    "filename": "sample_linestring.zip",
+    "status": "COMPLETED",
+    "source_crs": "EPSG:4326",
+    "summary": {
+      "total_features": 1,
+      "measured": 1,
+      "not_applicable": 0,
+      "unsupported": 0,
+      "failed": 0
+    },
+    "features": [
+      {
+        "feature_index": 0,
+        "feature_id": "0",
+        "geometry_type": "LineString",
+        "properties": {
+          "transect_i": "T-001"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              77.58,
+              12.97
+            ],
+            [
+              77.6,
+              12.99
+            ]
+          ]
+        },
+        "measurement_type": "length",
+        "measurement_value": 3100.8125,
+        "measurement_unit": "m",
+        "measurement_status": "MEASURED",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "length",
+          "measurement_unit": "m",
+          "method_description": "Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.5900\u00b0, 12.9800\u00b0). Measurements are in metres (sq metres for area). Raw length: 3100.812508 metres. Converted to metres: 3100.8125 m.",
+          "status": "MEASURED"
+        }
+      }
+    ]
+  },
+  {
+    "file_id": "1575cc52-9d6d-47f9-bc9a-aaa7c817f412",
+    "filename": "sample_mixed.kml",
+    "status": "COMPLETED",
+    "source_crs": "EPSG:4326",
+    "summary": {
+      "total_features": 3,
+      "measured": 2,
+      "not_applicable": 1,
+      "unsupported": 0,
+      "failed": 0
+    },
+    "features": [
+      {
+        "feature_index": 0,
+        "feature_id": "area1",
+        "geometry_type": "Polygon",
+        "properties": {
+          "name": "Survey Area"
+        },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                77.58,
+                12.97
+              ],
+              [
+                77.6,
+                12.97
+              ],
+              [
+                77.6,
+                12.99
+              ],
+              [
+                77.58,
+                12.99
+              ],
+              [
+                77.58,
+                12.97
+              ]
+            ]
+          ]
+        },
+        "measurement_type": "area",
+        "measurement_value": 4806604.8022,
+        "measurement_unit": "sq_m",
+        "measurement_status": "MEASURED",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "area",
+          "measurement_unit": "sq_m",
+          "method_description": "Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.5900\u00b0, 12.9800\u00b0). Measurements are in metres (sq metres for area). Raw area: 4806604.802236 metres\u00b2. Converted to sq metres: 4806604.8022 sq m (480.660480 ha).",
+          "status": "MEASURED"
+        }
+      },
+      {
+        "feature_index": 1,
+        "feature_id": "path1",
+        "geometry_type": "LineString",
+        "properties": {
+          "name": "Access Road"
+        },
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              77.58,
+              12.97
+            ],
+            [
+              77.6,
+              12.97
+            ]
+          ]
+        },
+        "measurement_type": "length",
+        "measurement_value": 2171.2071,
+        "measurement_unit": "m",
+        "measurement_status": "MEASURED",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "length",
+          "measurement_unit": "m",
+          "method_description": "Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.5900\u00b0, 12.9700\u00b0). Measurements are in metres (sq metres for area). Raw length: 2171.207112 metres. Converted to metres: 2171.2071 m.",
+          "status": "MEASURED"
+        }
+      },
+      {
+        "feature_index": 2,
+        "feature_id": "gcp1",
+        "geometry_type": "Point",
+        "properties": {
+          "name": "Ground Control Point 1",
+          "gcp_id": "GCP-001",
+          "accuracy_cm": "2.5"
+        },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            77.59,
+            12.98
+          ]
+        },
+        "measurement_type": "n/a",
+        "measurement_value": null,
+        "measurement_unit": null,
+        "measurement_status": "NOT_APPLICABLE",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "n/a",
+          "measurement_unit": null,
+          "method_description": "Point geometry has no applicable area or length measurement. Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.5900\u00b0, 12.9800\u00b0). Measurements are in metres (sq metres for area).",
+          "status": "NOT_APPLICABLE"
+        }
+      }
+    ]
+  },
+  {
+    "file_id": "b0ca4496-c4a9-408f-8a08-4189ceae7818",
+    "filename": "sample_polygon.kml",
+    "status": "COMPLETED",
+    "source_crs": "EPSG:4326",
+    "summary": {
+      "total_features": 1,
+      "measured": 1,
+      "not_applicable": 0,
+      "unsupported": 0,
+      "failed": 0
+    },
+    "features": [
+      {
+        "feature_index": 0,
+        "feature_id": "parcel1",
+        "geometry_type": "Polygon",
+        "properties": {
+          "name": "Land Parcel A",
+          "description": "Sample agricultural survey polygon near Bengaluru, India.",
+          "parcel_id": "BLR-001",
+          "land_use": "agriculture",
+          "survey_date": "2024-01-15"
+        },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                77.58,
+                12.97
+              ],
+              [
+                77.6,
+                12.97
+              ],
+              [
+                77.6,
+                12.99
+              ],
+              [
+                77.58,
+                12.99
+              ],
+              [
+                77.58,
+                12.97
+              ]
+            ]
+          ]
+        },
+        "measurement_type": "area",
+        "measurement_value": 4806604.8022,
+        "measurement_unit": "sq_m",
+        "measurement_status": "MEASURED",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "area",
+          "measurement_unit": "sq_m",
+          "method_description": "Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.5900\u00b0, 12.9800\u00b0). Measurements are in metres (sq metres for area). Raw area: 4806604.802236 metres\u00b2. Converted to sq metres: 4806604.8022 sq m (480.660480 ha).",
+          "status": "MEASURED"
+        }
+      }
+    ]
+  },
+  {
+    "file_id": "3e8e5c1d-67a0-4891-9b11-46fc14e4d89d",
+    "filename": "sample_polygon.zip",
+    "status": "COMPLETED",
+    "source_crs": "EPSG:4326",
+    "summary": {
+      "total_features": 2,
+      "measured": 2,
+      "not_applicable": 0,
+      "unsupported": 0,
+      "failed": 0
+    },
+    "features": [
+      {
+        "feature_index": 0,
+        "feature_id": "0",
+        "geometry_type": "Polygon",
+        "properties": {
+          "parcel_id": "SHP-001",
+          "land_use": "agriculture",
+          "area_ha": 4.0
+        },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                77.58,
+                12.97
+              ],
+              [
+                77.58,
+                12.99
+              ],
+              [
+                77.6,
+                12.99
+              ],
+              [
+                77.6,
+                12.97
+              ],
+              [
+                77.58,
+                12.97
+              ]
+            ]
+          ]
+        },
+        "measurement_type": "area",
+        "measurement_value": 4806604.8022,
+        "measurement_unit": "sq_m",
+        "measurement_status": "MEASURED",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "area",
+          "measurement_unit": "sq_m",
+          "method_description": "Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.5900\u00b0, 12.9800\u00b0). Measurements are in metres (sq metres for area). Raw area: 4806604.802236 metres\u00b2. Converted to sq metres: 4806604.8022 sq m (480.660480 ha).",
+          "status": "MEASURED"
+        }
+      },
+      {
+        "feature_index": 1,
+        "feature_id": "1",
+        "geometry_type": "Polygon",
+        "properties": {
+          "parcel_id": "SHP-002",
+          "land_use": "urban",
+          "area_ha": 2.0
+        },
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                77.61,
+                12.97
+              ],
+              [
+                77.61,
+                12.98
+              ],
+              [
+                77.62,
+                12.98
+              ],
+              [
+                77.62,
+                12.97
+              ],
+              [
+                77.61,
+                12.97
+              ]
+            ]
+          ]
+        },
+        "measurement_type": "area",
+        "measurement_value": 1201720.3931,
+        "measurement_unit": "sq_m",
+        "measurement_status": "MEASURED",
+        "provenance": {
+          "source_crs": "EPSG:4326",
+          "measurement_crs": "EPSG:32643",
+          "measurement_type": "area",
+          "measurement_unit": "sq_m",
+          "method_description": "Source CRS 'WGS 84' is geographic (angular units). Geometries were reprojected to UTM zone EPSG:32643 (WGS 84 / UTM zone 43N), selected from the geometry centroid at (77.6150\u00b0, 12.9750\u00b0). Measurements are in metres (sq metres for area). Raw area: 1201720.393106 metres\u00b2. Converted to sq metres: 1201720.3931 sq m (120.172039 ha).",
+          "status": "MEASURED"
+        }
+      }
+    ]
+  }
+]

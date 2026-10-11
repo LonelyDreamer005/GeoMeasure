@@ -1,0 +1,6 @@
+file_id,filename,file_type,total_features,measured_features,total_area_sq_m,total_area_hectares,total_length_m,source_crs,measurement_crs,validation_status
+31059a41-aab9-418a-9e10-02f1317ab451,sample_linestring.kml,kml,1,1,0,0.0,5513.2607,EPSG:4326,EPSG:32643,PASSED
+056da8c6-848e-4b3a-beae-6810b9aae542,sample_linestring.zip,shapefile,1,1,0,0.0,3100.8125,EPSG:4326,EPSG:32643,PASSED
+1575cc52-9d6d-47f9-bc9a-aaa7c817f412,sample_mixed.kml,kml,3,2,4806604.8022,480.6605,2171.2071,EPSG:4326,EPSG:32643,PASSED
+b0ca4496-c4a9-408f-8a08-4189ceae7818,sample_polygon.kml,kml,1,1,4806604.8022,480.6605,0,EPSG:4326,EPSG:32643,PASSED
+3e8e5c1d-67a0-4891-9b11-46fc14e4d89d,sample_polygon.zip,shapefile,2,2,6008325.1953,600.8325,0,EPSG:4326,EPSG:32643,PASSED

@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoMeasure — Geospatial File Measurement & Validation API</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    :root {
+      --bg-main: #0a0f1d;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-border: rgba(255, 255, 255, 0.08);
+      --bg-card-hover: rgba(31, 41, 55, 0.6);
+      --accent-cyan: #06b6d4;
+      --accent-cyan-glow: rgba(6, 182, 212, 0.35);
+      --accent-emerald: #10b981;
+      --accent-emerald-glow: rgba(16, 185, 129, 0.3);
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-purple: #8b5cf6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--bg-card-border);
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 24px;
+      color: white;
+      box-shadow: 0 0 20px var(--accent-cyan-glow);
+    }
+
+    .brand-text h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--bg-card-border);
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
+      color: var(--accent-cyan);
+      border-color: rgba(6, 182, 212, 0.4);
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Glassmorphism Card */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title span.badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed rgba(6, 182, 212, 0.35);
+      border-radius: 14px;
+      padding: 32px 20px;
+      text-align: center;
+      background: rgba(6, 182, 212, 0.03);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.08);
+      box-shadow: 0 0 20px var(--accent-cyan-glow);
+    }
+
+    .upload-icon {
+      font-size: 38px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .upload-zone h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .upload-zone p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .btn-choose {
+      background: var(--accent-cyan);
+      color: #0b0f19;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+
+    .btn-choose:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    /* Sample 1-Click Buttons */
+    .samples-section {
+      margin-top: 20px;
+    }
+
+    .samples-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-subtle);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .samples-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sample-btn {
+      width: 100%;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .sample-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(6, 182, 212, 0.3);
+      transform: translateX(3px);
+    }
+
+    .sample-btn span.tag {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+
+    /* Metrics Summary Strip */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 800px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .metric-card .label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .metric-card .val {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+    }
+
+    .metric-card .sub {
+      font-size: 11px;
+      color: var(--text-subtle);
+      margin-top: 4px;
+    }
+
+    /* Map Box */
+    #map {
+      height: 420px;
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--bg-card-border);
+      background: #111827;
+      z-index: 10;
+    }
+
+    /* Status Pills */
+    .badge-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .badge-MEASURED {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-NOT_APPLICABLE {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .badge-UNSUPPORTED {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-FAILED {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    /* Tabs */
+    .tab-header {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--bg-card-border);
+      margin-bottom: 16px;
+      padding-bottom: 4px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: rgba(6, 182, 212, 0.12);
+      color: var(--accent-cyan);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Table */
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 10px 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--bg-card-border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .btn-details {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .btn-details:hover {
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+
+    /* Provenance Accordion / Box */
+    .provenance-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .provenance-item {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .provenance-item .label {
+      color: var(--text-subtle);
+      font-weight: 500;
+    }
+
+    .provenance-item .val {
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+    }
+
+    /* Code Snippets for Automation */
+    .code-block {
+      background: #060913;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    /* Validation Alert Banner */
+    .validation-alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .validation-alert.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .validation-alert.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+
+    /* Spinner */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top: 3px solid var(--accent-cyan);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="logo-badge">GM</div>
+        <div class="brand-text">
+          <h1>GeoMeasure Visual Studio & Dashboard</h1>
+          <p>Reliable Spatial Measurements. Traceable Geospatial Data.</p>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a href="/docs" target="_blank" class="nav-btn primary">📘 Swagger UI</a>
+        <a href="/redoc" target="_blank" class="nav-btn">📖 ReDoc</a>
+        <a href="https://github.com/LonelyDreamer005/GeoMeasure" target="_blank" class="nav-btn">⭐ GitHub Repo</a>
+        <a href="/health" target="_blank" class="nav-btn">💚 Health</a>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Sidebar / Controls -->
+      <aside>
+        <div class="card">
+          <div class="card-title">
+            <span>Upload Dataset</span>
+            <span class="badge">KML / ZIP</span>
+          </div>
+
+          <!-- Drag & Drop Zone -->
+          <div class="upload-zone" id="dropZone">
+            <span class="upload-icon">📂</span>
+            <h3>Drop your geospatial file</h3>
+            <p>Accepts .kml or zipped Shapefile (.zip)</p>
+            <input type="file" id="fileInput" class="file-input" accept=".kml,.zip">
+            <button class="btn-choose" onclick="document.getElementById('fileInput').click()">Select File</button>
+          </div>
+
+          <div id="uploadStatus" style="margin-top: 12px; display: none;"></div>
+
+          <!-- 1-Click Sample Testing -->
+          <div class="samples-section">
+            <h4>Quick 1-Click Sample Demos</h4>
+            <div class="samples-list">
+              <button class="sample-btn" onclick="loadSample('sample_polygon.kml')">
+                <span>📍 Bangalore Tech Park (Polygon)</span>
+                <span class="tag">KML</span>
+              </button>
+              <button class="sample-btn" onclick="loadSample('sample_linestring.kml')">
+                <span>📏 Pipeline Survey (LineString)</span>
+                <span class="tag">KML</span>
+              </button>
+              <button class="sample-btn" onclick="loadSample('sample_mixed.kml')">
+                <span>🗺️ Mixed Land Parcels + Points</span>
+                <span class="tag">KML</span>
+              </button>
+              <button class="sample-btn" onclick="loadSample('sample_polygon.zip')">
+                <span>📦 Survey Shapefile Polygon</span>
+                <span class="tag">SHP.ZIP</span>
+              </button>
+              <button class="sample-btn" onclick="loadSample('sample_linestring.zip')">
+                <span>📦 Road Network Shapefile</span>
+                <span class="tag">SHP.ZIP</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Automation Guide Preview -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-title">
+            <span>Automation Pipeline</span>
+            <span class="badge">CLI / Script</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+            Run automated batch audits on directories of files using our built-in CLI pipeline:
+          </p>
+          <div class="code-block" style="padding: 10px; font-size: 11px;">
+            python automate_pipeline.py --input sample_data/
+          </div>
+          <p style="font-size: 11px; color: var(--text-subtle);">
+            Generates <code>batch_results.csv</code> & <code>batch_results.json</code> with zero manual clicks.
+          </p>
+        </div>
+      </aside>
+
+      <!-- Main Display Area -->
+      <main>
+        
+        <!-- Metrics Cards Strip -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="label">Total Features</div>
+            <div class="val" id="metricTotalFeatures">-</div>
+            <div class="sub" id="metricMeasuredFeatures">Upload a file to begin</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Total Area</div>
+            <div class="val" id="metricTotalArea">-</div>
+            <div class="sub" id="metricHectares">-</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Total Length</div>
+            <div class="val" id="metricTotalLength">-</div>
+            <div class="sub" id="metricKm">-</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Target CRS (UTM)</div>
+            <div class="val" id="metricCRS" style="font-size: 18px;">-</div>
+            <div class="sub" id="metricSourceCRS">Source: -</div>
+          </div>
+        </div>
+
+        <!-- Validation Banner -->
+        <div id="validationBanner" class="validation-alert success" style="display: none;">
+          <span style="font-size: 18px;">✅</span>
+          <div id="validationText">Validation successful: No CRS or geometry integrity issues detected.</div>
+        </div>
+
+        <!-- Map & Visualization Card -->
+        <div class="card">
+          <div class="card-title">
+            <span>Geospatial Visualizer</span>
+            <span id="activeFilename" style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 13px;">No file loaded</span>
+          </div>
+          <div id="map"></div>
+        </div>
+
+        <!-- Details & Provenance Card -->
+        <div class="card" style="margin-top: 20px;">
+          <!-- Tabs -->
+          <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTab('tabMeasurements')">📊 Feature Measurements</button>
+            <button class="tab-btn" onclick="switchTab('tabProvenance')">🔍 Measurement Provenance</button>
+            <button class="tab-btn" onclick="switchTab('tabAutomation')">🤖 Automation Code Snippets</button>
+            <button class="tab-btn" onclick="switchTab('tabRawJson')">📄 Raw JSON</button>
+          </div>
+
+          <!-- Tab 1: Measurements Table -->
+          <div id="tabMeasurements" class="tab-content active">
+            <div class="table-responsive">
+              <table id="measurementsTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Feature ID</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Measurement</th>
+                    <th>Unit</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="measurementsBody">
+                  <tr>
+                    <td colspan="7" class="empty-state">No measurements loaded yet. Select a file or click a 1-click sample to process.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 2: Provenance Inspector -->
+          <div id="tabProvenance" class="tab-content">
+            <div id="provenanceContainer">
+              <div class="empty-state">Provenance records explain CRS reprojection and planar calculation formulas. Load a file to inspect.</div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Automation Code Snippets -->
+          <div id="tabAutomation" class="tab-content">
+            <h4 style="font-size: 13px; margin-bottom: 8px; color: var(--text-main);">Python Automated Ingestion:</h4>
+            <div class="code-block">
+import requests
+
+# 1. Upload & Measure file
+with open("sample_polygon.kml", "rb") as f:
+    upload_res = requests.post("http://localhost:8000/api/files/", files={"file": f}).json()
+
+file_id = upload_res["id"]
+print(f"File processed: {file_id}, Status: {upload_res['status']}")
+
+# 2. Fetch full measurements and provenance
+measurements = requests.get(f"http://localhost:8000/api/files/{file_id}/measurements/").json()
+for feat in measurements["features"]:
+    print(f"[{feat['geometry_type']}] Value: {feat['measurement_value']} {feat['measurement_unit']} | Status: {feat['measurement_status']}")
+    print(f"Provenance: {feat['provenance']['method_description']}")
+            </div>
+
+            <h4 style="font-size: 13px; margin-bottom: 8px; color: var(--text-main);">cURL Terminal Command:</h4>
+            <div class="code-block">
+curl -X POST "http://localhost:8000/api/files/" \
+  -F "file=@sample_polygon.kml"
+            </div>
+          </div>
+
+          <!-- Tab 4: Raw JSON View -->
+          <div id="tabRawJson" class="tab-content">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+              <button class="btn-choose" onclick="copyJson()">Copy to Clipboard</button>
+            </div>
+            <pre id="jsonViewer" class="code-block" style="max-height: 400px; color: #a5f3fc;">// JSON output will appear here</pre>
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Leaflet Map
+    let map = L.map('map').setView([12.9716, 77.5946], 12); // Default to Bengaluru
+
+    // Dark Tile Layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    let geoJsonLayer = null;
+    let currentMeasurementsData = null;
+
+    // Drag and drop handlers
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        uploadFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        uploadFile(fileInput.files[0]);
+      }
+    });
+
+    // Upload & Process function
+    async function uploadFile(file) {
+      const statusDiv = document.getElementById('uploadStatus');
+      statusDiv.style.display = 'block';
+      statusDiv.innerHTML = `<span class="spinner"></span> Processing ${file.name}...`;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('/api/files/', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Processing failed');
+        }
+
+        const data = await response.json();
+        statusDiv.innerHTML = `<span style="color: var(--accent-emerald);">✔ ${file.name} uploaded successfully!</span>`;
+        
+        // Fetch detailed measurements
+        await fetchMeasurements(data.id, file.name, data.validation_summary);
+
+      } catch (err) {
+        statusDiv.innerHTML = `<span style="color: var(--accent-rose);">✖ Error: ${err.message}</span>`;
+      }
+    }
+
+    // 1-Click Sample Loader
+    async function loadSample(sampleName) {
+      const statusDiv = document.getElementById('uploadStatus');
+      statusDiv.style.display = 'block';
+      statusDiv.innerHTML = `<span class="spinner"></span> Loading sample: ${sampleName}...`;
+
+      try {
+        const response = await fetch(`/api/files/load-sample/${sampleName}`, {
+          method: 'POST'
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Sample load failed');
+        }
+
+        const data = await response.json();
+        statusDiv.innerHTML = `<span style="color: var(--accent-emerald);">✔ Sample loaded: ${sampleName}</span>`;
+        await fetchMeasurements(data.id, sampleName, data.validation_summary);
+      } catch (err) {
+        statusDiv.innerHTML = `<span style="color: var(--accent-rose);">✖ Error: ${err.message}</span>`;
+      }
+    }
+
+    // Fetch and render measurements
+    async function fetchMeasurements(fileId, filename, validationSummary) {
+      try {
+        const response = await fetch(`/api/files/${fileId}/measurements/`);
+        const data = await response.json();
+        currentMeasurementsData = data;
+
+        document.getElementById('activeFilename').textContent = filename;
+
+        // Update JSON viewer
+        document.getElementById('jsonViewer').textContent = JSON.stringify(data, null, 2);
+
+        // Update Validation banner
+        const valBanner = document.getElementById('validationBanner');
+        valBanner.style.display = 'flex';
+        if (validationSummary && validationSummary.has_issues) {
+          valBanner.className = 'validation-alert warning';
+          document.getElementById('validationText').innerHTML = `⚠️ Validation issues detected: ${validationSummary.issues.map(i => i.detail).join(', ')}`;
+        } else {
+          valBanner.className = 'validation-alert success';
+          document.getElementById('validationText').innerHTML = `✅ Validation passed: No geometry anomalies. Safe and accurate.`;
+        }
+
+        // Calculate totals for metrics
+        let totalArea = 0;
+        let totalLength = 0;
+        let measuredCount = 0;
+        let targetCRS = 'N/A';
+
+        data.features.forEach(f => {
+          if (f.measurement_status === 'MEASURED') {
+            measuredCount++;
+            if (f.measurement_type === 'area' && f.measurement_value) {
+              totalArea += f.measurement_value;
+            }
+            if (f.measurement_type === 'length' && f.measurement_value) {
+              totalLength += f.measurement_value;
+            }
+          }
+          if (f.provenance && f.provenance.measurement_crs) {
+            targetCRS = f.provenance.measurement_crs;
+          }
+        });
+
+        document.getElementById('metricTotalFeatures').textContent = data.features.length;
+        document.getElementById('metricMeasuredFeatures').textContent = `${measuredCount} measured`;
+        
+        if (totalArea > 0) {
+          document.getElementById('metricTotalArea').textContent = `${totalArea.toLocaleString(undefined, {maximumFractionDigits: 1})} m²`;
+          document.getElementById('metricHectares').textContent = `${(totalArea / 10000).toFixed(3)} hectares`;
+        } else {
+          document.getElementById('metricTotalArea').textContent = 'None';
+          document.getElementById('metricHectares').textContent = 'No polygon features';
+        }
+
+        if (totalLength > 0) {
+          document.getElementById('metricTotalLength').textContent = `${totalLength.toLocaleString(undefined, {maximumFractionDigits: 1})} m`;
+          document.getElementById('metricKm').textContent = `${(totalLength / 1000).toFixed(3)} km`;
+        } else {
+          document.getElementById('metricTotalLength').textContent = 'None';
+          document.getElementById('metricKm').textContent = 'No linestring features';
+        }
+
+        document.getElementById('metricCRS').textContent = targetCRS;
+        document.getElementById('metricSourceCRS').textContent = `Source: ${data.source_crs || 'WGS 84'}`;
+
+        // Render Map Geometries
+        renderMapFeatures(data.features);
+
+        // Render Table
+        renderTable(data.features);
+
+        // Render Provenance
+        renderProvenance(data.features);
+
+      } catch (err) {
+        console.error("Error loading measurements:", err);
+      }
+    }
+
+    function renderMapFeatures(features) {
+      if (geoJsonLayer) {
+        map.removeLayer(geoJsonLayer);
+      }
+
+      const validGeoms = [];
+
+      features.forEach(f => {
+        if (f.geometry) {
+          validGeoms.push({
+            type: "Feature",
+            geometry: f.geometry,
+            properties: {
+              ...f.properties,
+              id: f.feature_id,
+              type: f.geometry_type,
+              status: f.measurement_status,
+              val: f.measurement_value,
+              unit: f.measurement_unit
+            }
+          });
+        }
+      });
+
+      if (validGeoms.length === 0) return;
+
+      const featureCollection = {
+        type: "FeatureCollection",
+        features: validGeoms
+      };
+
+      geoJsonLayer = L.geoJSON(featureCollection, {
+        style: function(feature) {
+          return {
+            color: '#06b6d4',
+            weight: 3,
+            fillColor: '#0891b2',
+            fillOpacity: 0.35
+          };
+        },
+        pointToLayer: function(feature, latlng) {
+          return L.circleMarker(latlng, {
+            radius: 8,
+            fillColor: '#10b981',
+            color: '#ffffff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+          });
+        },
+        onEachFeature: function(feature, layer) {
+          const p = feature.properties;
+          let popup = `
+            <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #1e293b;">
+              <strong style="color: #0891b2; font-size: 13px;">${p.name || p.id || 'Feature'}</strong><br/>
+              <b>Type:</b> ${p.type}<br/>
+              <b>Status:</b> ${p.status}<br/>
+              ${p.val !== null ? `<b>Measurement:</b> ${p.val.toLocaleString()} ${p.unit}` : ''}
+            </div>
+          `;
+          layer.bindPopup(popup);
+        }
+      }).addTo(map);
+
+      // Fit map bounds
+      map.fitBounds(geoJsonLayer.getBounds(), { padding: [30, 30] });
+    }
+
+    function renderTable(features) {
+      const tbody = document.getElementById('measurementsBody');
+      tbody.innerHTML = '';
+
+      features.forEach(f => {
+        const tr = document.createElement('tr');
+        const valText = f.measurement_value !== null ? f.measurement_value.toLocaleString(undefined, {maximumFractionDigits: 4}) : '—';
+        
+        tr.innerHTML = `
+          <td style="font-family: var(--font-mono); color: var(--text-subtle);">${f.feature_index}</td>
+          <td style="font-weight: 500;">${f.feature_id || f.properties?.name || 'Feature ' + f.feature_index}</td>
+          <td><span class="tag" style="font-size: 11px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${f.geometry_type}</span></td>
+          <td><span class="badge-status badge-${f.measurement_status}">${f.measurement_status}</span></td>
+          <td style="font-family: var(--font-mono); font-weight: 600;">${valText}</td>
+          <td style="color: var(--text-muted);">${f.measurement_unit || '—'}</td>
+          <td>
+            <button class="btn-details" onclick="inspectFeature(${f.feature_index})">View Provenance</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderProvenance(features) {
+      const container = document.getElementById('provenanceContainer');
+      container.innerHTML = '';
+
+      features.forEach(f => {
+        const prov = f.provenance;
+        if (!prov) return;
+
+        const box = document.createElement('div');
+        box.className = 'provenance-box';
+        box.id = `prov-${f.feature_index}`;
+
+        box.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="color: var(--accent-cyan);">Feature #${f.feature_index}: ${f.feature_id || 'Item'} (${f.geometry_type})</strong>
+            <span class="badge-status badge-${f.measurement_status}">${f.measurement_status}</span>
+          </div>
+          <div class="provenance-item">
+            <span class="label">Source CRS:</span>
+            <span class="val">${prov.source_crs || 'N/A'}</span>
+          </div>
+          <div class="provenance-item">
+            <span class="label">Measurement CRS:</span>
+            <span class="val">${prov.measurement_crs || 'N/A'}</span>
+          </div>
+          <div class="provenance-item">
+            <span class="label">Output Unit:</span>
+            <span class="val">${prov.measurement_unit || 'None'}</span>
+          </div>
+          <div class="provenance-item">
+            <span class="label">Method Description:</span>
+            <span class="val" style="color: #cbd5e1; font-family: var(--font-sans);">${prov.method_description || 'None recorded'}</span>
+          </div>
+        `;
+        container.appendChild(box);
+      });
+    }
+
+    function inspectFeature(index) {
+      switchTab('tabProvenance');
+      const el = document.getElementById(`prov-${index}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+        el.style.borderColor = 'var(--accent-cyan)';
+        setTimeout(() => {
+          el.style.borderColor = 'var(--bg-card-border)';
+        }, 2000);
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      event.target.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function copyJson() {
+      const jsonText = document.getElementById('jsonViewer').textContent;
+      navigator.clipboard.writeText(jsonText).then(() => {
+        alert('Copied measurements JSON to clipboard!');
+      });
+    }
+
+    // Auto-load sample polygon on first page visit
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSample('sample_polygon.kml');
+    });
+  </script>
+</body>
+</html>
