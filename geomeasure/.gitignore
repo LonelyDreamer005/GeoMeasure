@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+.env
+*.egg-info/
+dist/
+build/
+
+# Database (local dev databases should not be committed)
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads (temporary file storage — never commit uploaded data)
+uploads/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test / coverage artefacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Generated sample data (regenerate with generate_samples.py)
+sample_data/*.kml
+sample_data/*.zip
+sample_data/*.shp
+sample_data/*.dbf
+sample_data/*.shx
+sample_data/*.prj
+
+# Environment
+.env
