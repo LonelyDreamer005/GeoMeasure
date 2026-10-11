@@ -325,6 +325,19 @@ python -m pytest tests/ -v
 
 ---
 
+## Important Design Decisions
+
+1. **Why XML parsing for KML instead of GDAL?**
+   The pre-built GeoPandas wheels for Windows (without a full GDAL build) do not include the KML/LIBKML driver. GeoMeasure parses KML directly using Python's standard-library `xml.etree.ElementTree`, guaranteeing zero external binary installation issues on Windows.
+
+2. **Why UTM for reprojection?**
+   UTM provides metric coordinates with $< 0.1\%$ distortion for areas within a 6° zone and is familiar to GIS practitioners worldwide.
+
+3. **Why Synchronous Processing?**
+   Synchronous processing keeps the code simple and easy to trace during technical review without requiring external message queues (Celery/RabbitMQ).
+
+---
+
 ## What I Learned (Key Takeaways)
 
 1. **CRS Handling is the Core of Geospatial Engineering:**
