@@ -450,12 +450,41 @@ python -m pytest tests/ -v
 2. **Why UTM for reprojection?**
    UTM provides metric coordinates with $< 0.1\%$ distortion for areas within a 6° zone and is familiar to GIS practitioners.
 3. **Why Synchronous Processing?**
-   For files up to 50 MB, synchronous processing keeps the code simple and easy to trace during technical review without requiring message queues.
-
----
-
-## Submission Details
-
-- **Author:** Vinay (B.Tech Computer Science)
-- **Repository:** [https://github.com/LonelyDreamer005/GeoMeasure](https://github.com/LonelyDreamer005/GeoMeasure)
-- **Target Company:** Aereo (Geospatial File Measurement API Assignment)
+   Synchronous processing keeps the code simple and easy to trace during technical review without requiring message queues.
+456: 
+457: ## What I Learned (Key Takeaways)
+458: 
+459: 1. **CRS Handling is the Core of Geospatial Engineering:**
+460:    - A single wrong assumption — like measuring Euclidean distance in latitude/longitude degrees (`EPSG:4326`) — produces meaningless numbers ($0.00004^\circ$ vs $4.8\text{M } m^2$).
+461:    - Dynamically selecting UTM zones based on the feature centroid guarantees that metric distortions stay well under $0.1\%$.
+462: 2. **Defensive File Ingestion:**
+463:    - Trusting client file extensions is dangerous. Enforcing magic-byte verification (`PK\x03\x04` for ZIP, XML declaration for KML) and guarding against ZIP path traversal attacks (`..`) protects server security.
+464: 3. **Traceability through Measurement Provenance:**
+465:    - In commercial GIS workflows (like Aereo drone surveying), returning a raw number is not enough. Clients and GIS auditors require full traceability: source CRS, reprojected UTM zone, centroid, and conversion formulas.
+466: 4. **Data Integrity (`null` ≠ `0.0`):**
+467:    - Point geometries have no area or length. Silently returning `0.0` would corrupt downstream GIS aggregations; returning `null` with status `NOT_APPLICABLE` preserves semantic correctness.
+468: 5. **Robust Automated Testing:**
+469:    - Testing spatial algorithms requires tolerance bounds ($\pm 5\%$ for area, $\pm 1\%$ for distance) rather than exact float equality due to ellipsoidal curvature nuances.
+470: 
+471: ---
+472: 
+473: ## Future Scope & Production Roadmap
+474: 
+475: 1. **Background Asynchronous Worker Queues:**
+476:    - Integrate Celery or ARQ with Redis for multi-gigabyte files, processing massive datasets asynchronously with webhook callbacks.
+477: 2. **Additional Geospatial Format Support:**
+478:    - Expand beyond KML and Shapefiles to support **GeoJSON**, **GeoPackage (`.gpkg`)**, **FlatGeobuf (`.fgb`)**, and **DXF/DWG** CAD files.
+479: 3. **Cloud-Native Object Storage (S3 / GCS):**
+480:    - Move from local filesystem storage to AWS S3 or Google Cloud Storage with presigned upload URLs.
+481: 4. **Interactive GIS Drawing & Editing:**
+482:    - Allow users to split, merge, or buffer geometries directly in the Web UI before computing measurements.
+483: 5. **Equal-Area Projections for Continental/Global Datasets:**
+484:    - Implement cylindrical equal-area or Albers equal-area projections for geometries spanning multiple continents.
+485: 
+486: ---
+487: 
+488: ## Submission Details
+489: 
+490: - **Author:** Vinay (B.Tech Computer Science)
+491: - **Repository:** [https://github.com/LonelyDreamer005/GeoMeasure](https://github.com/LonelyDreamer005/GeoMeasure)
+492: - **Target Company:** Aereo (Geospatial File Measurement API Assignment)

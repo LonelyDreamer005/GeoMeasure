@@ -325,6 +325,37 @@ python -m pytest tests/ -v
 
 ---
 
+## What I Learned (Key Takeaways)
+
+1. **CRS Handling is the Core of Geospatial Engineering:**
+   - A single wrong assumption — like measuring Euclidean distance in latitude/longitude degrees (`EPSG:4326`) — produces meaningless numbers ($0.00004^\circ$ vs $4.8\text{M } m^2$).
+   - Dynamically selecting UTM zones based on the feature centroid guarantees that metric distortions stay well under $0.1\%$.
+2. **Defensive File Ingestion:**
+   - Trusting client file extensions is dangerous. Enforcing magic-byte verification (`PK\x03\x04` for ZIP, XML declaration for KML) and guarding against ZIP path traversal attacks (`..`) protects server security.
+3. **Traceability through Measurement Provenance:**
+   - In commercial GIS workflows (like Aereo drone surveying), returning a raw number is not enough. Clients and GIS auditors require full traceability: source CRS, reprojected UTM zone, centroid, and conversion formulas.
+4. **Data Integrity (`null` ≠ `0.0`):**
+   - Point geometries have no area or length. Silently returning `0.0` would corrupt downstream GIS aggregations; returning `null` with status `NOT_APPLICABLE` preserves semantic correctness.
+5. **Robust Automated Testing:**
+   - Testing spatial algorithms requires tolerance bounds ($\pm 5\%$ for area, $\pm 1\%$ for distance) rather than exact float equality due to ellipsoidal curvature nuances.
+
+---
+
+## Future Scope & Production Roadmap
+
+1. **Background Asynchronous Worker Queues:**
+   - Integrate Celery or ARQ with Redis for multi-gigabyte files, processing massive datasets asynchronously with webhook callbacks.
+2. **Additional Geospatial Format Support:**
+   - Expand beyond KML and Shapefiles to support **GeoJSON**, **GeoPackage (`.gpkg`)**, **FlatGeobuf (`.fgb`)**, and **DXF/DWG** CAD files.
+3. **Cloud-Native Object Storage (S3 / GCS):**
+   - Move from local filesystem storage to AWS S3 or Google Cloud Storage with presigned upload URLs.
+4. **Interactive GIS Drawing & Editing:**
+   - Allow users to split, merge, or buffer geometries directly in the Web UI before computing measurements.
+5. **Equal-Area Projections for Continental/Global Datasets:**
+   - Implement cylindrical equal-area or Albers equal-area projections for geometries spanning multiple continents.
+
+---
+
 ## Submission Details
 
 - **Author:** Vinay (B.Tech Computer Science)
